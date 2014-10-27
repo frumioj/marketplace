@@ -18,13 +18,11 @@
   (send-to-user* (process-debug-name p) (process-pid p) (e) failure-result enclosed-expr))
 
 (define-syntax-rule (send-to-user* debug-name pid (e) failure-result enclosed-expr)
-  (with-handlers ([exn:fail? (lambda: ([e : Reason])
-			       (if (exn? e)
-				   (marketplace-log 'error "Process ~v(~v):~n~a~n"
-						    debug-name pid (exn-message e))
-				   (marketplace-log 'error "Process ~v(~v):~n~v~n"
-						    debug-name pid e))
-			       failure-result)])
+  (with-handlers ([exn:fail? (lambda: ([the-exn : exn:fail])
+			       (let: ((e : Reason (cast the-exn Reason)))
+				 (marketplace-log 'error "Process ~v(~v):~n~a~n"
+						  debug-name pid (exn-message the-exn))
+				 failure-result))])
     (marketplace-log 'debug "Entering process ~v(~v)" debug-name pid)
     (define result enclosed-expr)
     (marketplace-log 'debug "Leaving  process ~v(~v)" debug-name pid)
